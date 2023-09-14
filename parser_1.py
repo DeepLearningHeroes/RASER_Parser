@@ -13,7 +13,7 @@ def nlpParser(fname):
 
   ' '.join(text.split())
 
-  pkl_filename = 'D:\dev\python\py-tutorial\model.pkl'
+  pkl_filename = 'model.pkl'
   with open(pkl_filename,'rb') as file:
     model=pickle.load(file)
 
