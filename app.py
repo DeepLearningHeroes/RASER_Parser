@@ -3,6 +3,9 @@ from flask_restful import Resource, Api
 from flask_cors import CORS
 import os
 import parser_1
+import resume_scorer
+from utils import resume_extractor
+import re
 
 app = Flask(__name__)
 cors = CORS(app, resources={r"*": {"origins": "*"}})
@@ -39,7 +42,7 @@ class GetParsedOutput(Resource):
                 file.save(uploaded_file_path)
 
                 output = parser_1.nlpParser(uploaded_file_path)
-                return {"Output": output}, 201
+                return {"Skills": output}, 201
 
             return {"error": "Invalid file format. Please upload a PDF file."}
 
@@ -48,9 +51,35 @@ class GetParsedOutput(Resource):
 
         except Exception as error:
             return {'error': str(error)}, 500  
+        
+class GetRankedResumes(Resource):
+    def get(self):
+        return {"error": "Invalid Method."}
+
+    def post(self):
+        try:
+            folder_path="./test/resume_data"
+            if os.path.exists(folder_path) and os.path.isdir(folder_path):
+                for item in os.listdir(folder_path):
+                    item_path=os.path.join(folder_path,item)
+                    if os.path.isfile(item_path):
+                        os.unlink(item_path)
+
+                resume_extractor.process_pdfs("./test/excel/resumes.xlsx")
+
+                res = resume_scorer.Score_Resumes("./test/resume_data","./test/cv_data/rtcamp.pdf")
+                sorted_score_list = dict(sorted(res.items(), key=lambda item: item[1], reverse=True))
+
+                return {"Rankings": sorted_score_list}, 201
+
+            return {"error": "Something went wrong"}
+
+        except Exception as error:
+            return {'error': str(error)}, 500  
 
 api.add_resource(Test,'/')
 api.add_resource(GetParsedOutput,'/getOutput')
+api.add_resource(GetRankedResumes,'/getRankedResumes')
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
